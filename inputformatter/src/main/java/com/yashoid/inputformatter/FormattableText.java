@@ -14,9 +14,11 @@ public class FormattableText implements CharSequence {
 
     private class FormattableChar extends ReplacementSpan {
 
+        private int index;
         private String c;
 
-        protected FormattableChar(char c) {
+        protected FormattableChar(int index, char c) {
+            this.index = index;
             this.c = "" + c;
         }
 
@@ -46,25 +48,45 @@ public class FormattableText implements CharSequence {
 
         @Override
         public int getSize(Paint paint, CharSequence text, int start, int end, Paint.FontMetricsInt fm) {
-            return (int) paint.measureText(c);
+            int startIndex = 0;
+
+            for (int i = 0; i < mChars.length; i++) {
+                if (i == index) {
+                    break;
+                }
+
+                FormattableChar fc = mChars[i];
+
+                startIndex += fc.length();
+            }
+
+            float size = paint.measureText(mBigPicture, 0, startIndex + length()) -
+                    paint.measureText(mBigPicture, 0, startIndex);
+
+            return (int) size;
         }
 
         @Override
         public void draw(Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, Paint paint) {
-            Paint.FontMetrics fm = paint.getFontMetrics();
-
-            canvas.drawText(c, x, top - fm.top, paint);
+            if (index == 0) {
+                Paint.FontMetrics fm = paint.getFontMetrics();
+                canvas.drawText(mBigPicture, x, top - fm.top, paint);
+            }
         }
 
     }
 
+    private String mBigPicture;
+
     private FormattableChar[] mChars;
 
     protected FormattableText(CharSequence text) {
+        mBigPicture = text.toString();
+
         mChars = new FormattableChar[text.length()];
 
         for (int i = 0; i < mChars.length; i++) {
-            mChars[i] = new FormattableChar(text.charAt(i));
+            mChars[i] = new FormattableChar(i, text.charAt(i));
         }
     }
 
@@ -115,6 +137,8 @@ public class FormattableText implements CharSequence {
     }
 
     public FormattableText insert(int index, String s) {
+        mBigPicture = mBigPicture.substring(0, index) + s + mBigPicture.substring(index);
+
         CharLookupResult result = lookupChar(index);
 
         result.c.insert(result.indexOffset, s);
@@ -123,6 +147,8 @@ public class FormattableText implements CharSequence {
     }
 
     public FormattableText delete(int start, int end) {
+        mBigPicture = mBigPicture.substring(0, start) + mBigPicture.substring(end);
+
         CharLookupResult startResult = lookupChar(start);
         CharLookupResult endResult = lookupChar(end);
 
@@ -149,6 +175,8 @@ public class FormattableText implements CharSequence {
     }
 
     public FormattableText replaceAll(char src, char dst) {
+        mBigPicture = mBigPicture.replace(src, dst);
+
         for (FormattableChar c: mChars) {
             c.replaceAll(src, dst);
         }

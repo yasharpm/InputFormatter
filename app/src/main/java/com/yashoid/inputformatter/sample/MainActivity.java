@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void format(FormattableText text) {
             text.replaceAll(' ', '.');
+            text.replaceAll('س', 'ش');
         }
 
     };
