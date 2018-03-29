@@ -2,6 +2,7 @@ package com.yashoid.inputformatter.sample;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextDirectionHeuristic;
 import android.widget.EditText;
 
 import com.yashoid.inputformatter.FormattableText;
@@ -25,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
         editPrice.addTextChangedListener(new PriceInputFormatter(","));
 
         EditText editCustom = (EditText) findViewById(R.id.edit_custom);
-        editCustom.addTextChangedListener(new InputFormatter(mCustomFormatter));
+        editCustom.addTextChangedListener(new InputFormatter(mCustomFormatter, editCustom));
     }
 
     private Formatter mCustomFormatter = new Formatter() {

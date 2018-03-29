@@ -2,8 +2,11 @@ package com.yashoid.inputformatter;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.RectF;
+import android.os.Build;
 import android.text.Spannable;
 import android.text.Spanned;
+import android.text.TextDirectionHeuristics;
 import android.text.style.ReplacementSpan;
 
 /**
@@ -16,6 +19,11 @@ public class FormattableText implements CharSequence {
 
         private int index;
         private String c;
+
+        private String drawingText;
+        private float drawingTextLength;
+        private float startX;
+        private float endX;
 
         protected FormattableChar(int index, char c) {
             this.index = index;
@@ -48,40 +56,62 @@ public class FormattableText implements CharSequence {
 
         @Override
         public int getSize(Paint paint, CharSequence text, int start, int end, Paint.FontMetricsInt fm) {
-            int startIndex = 0;
+            int startIndex = FormattableText.this.length(index);
+            int endIndex = FormattableText.this.length(index + 1);
 
-            for (int i = 0; i < mChars.length; i++) {
-                if (i == index) {
-                    break;
-                }
+            int lineIndex = mBigPicture.substring(0, startIndex).lastIndexOf('\n', startIndex);
 
-                FormattableChar fc = mChars[i];
+            if (lineIndex >= 0) {
+                drawingText = mBigPicture.substring(lineIndex + 1);
 
-                startIndex += fc.length();
+                startIndex -= lineIndex + 1;
+                endIndex -= lineIndex + 1;
+            }
+            else {
+                drawingText = mBigPicture;
             }
 
-            float size = paint.measureText(mBigPicture, 0, startIndex + length()) -
-                    paint.measureText(mBigPicture, 0, startIndex);
+            drawingTextLength = paint.measureText(drawingText);
 
-            return (int) size;
+            startX = paint.measureText(drawingText, 0, startIndex);
+            endX = paint.measureText(drawingText, 0, endIndex);
+
+            return (int) (endX - startX);
         }
 
         @Override
         public void draw(Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, Paint paint) {
-            if (index == 0) {
-                Paint.FontMetrics fm = paint.getFontMetrics();
-                canvas.drawText(mBigPicture, x, top - fm.top, paint);
+            Paint.FontMetrics fm = paint.getFontMetrics();
+
+            mHelperRect.set(x, -1000, x + endX - startX, 1000);
+
+            canvas.save();
+            canvas.clipRect(mHelperRect);
+
+            if (mIsRtl) {
+                x -= drawingTextLength - (endX);
             }
+            else {
+                x -= startX;
+            }
+
+            canvas.drawText(drawingText, x, top - fm.top, paint);
+
+            canvas.restore();
         }
 
     }
 
     private String mBigPicture;
+    private boolean mIsRtl;
 
     private FormattableChar[] mChars;
 
+    private RectF mHelperRect = new RectF();
+
     protected FormattableText(CharSequence text) {
         mBigPicture = text.toString();
+        onBigPictureChanged();
 
         mChars = new FormattableChar[text.length()];
 
@@ -96,6 +126,16 @@ public class FormattableText implements CharSequence {
 
         for (FormattableChar c: mChars) {
             len += c.length();
+        }
+
+        return len;
+    }
+
+    protected int length(int end) {
+        int len = 0;
+
+        for (int i = 0; i < end; i++) {
+            len += mChars[i].length();
         }
 
         return len;
@@ -138,6 +178,7 @@ public class FormattableText implements CharSequence {
 
     public FormattableText insert(int index, String s) {
         mBigPicture = mBigPicture.substring(0, index) + s + mBigPicture.substring(index);
+        onBigPictureChanged();
 
         CharLookupResult result = lookupChar(index);
 
@@ -148,6 +189,7 @@ public class FormattableText implements CharSequence {
 
     public FormattableText delete(int start, int end) {
         mBigPicture = mBigPicture.substring(0, start) + mBigPicture.substring(end);
+        onBigPictureChanged();
 
         CharLookupResult startResult = lookupChar(start);
         CharLookupResult endResult = lookupChar(end);
@@ -176,12 +218,18 @@ public class FormattableText implements CharSequence {
 
     public FormattableText replaceAll(char src, char dst) {
         mBigPicture = mBigPicture.replace(src, dst);
+        onBigPictureChanged();
 
         for (FormattableChar c: mChars) {
             c.replaceAll(src, dst);
         }
 
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return mBigPicture;
     }
 
     protected void addSpans(Spannable s) {
@@ -194,6 +242,19 @@ public class FormattableText implements CharSequence {
         for (int i = 0; i < mChars.length; i++) {
             s.setSpan(mChars[i], i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
+    }
+
+    private void onBigPictureChanged() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            mIsRtl = TextDirectionHeuristics.FIRSTSTRONG_LTR.isRtl(mBigPicture, 0, mBigPicture.length());
+        }
+        else {
+            mIsRtl = mBigPicture.matches("[\\p{IsAlphabetic}&&\\W]");
+        }
+    }
+
+    protected boolean isRtl() {
+        return mIsRtl;
     }
 
     private CharLookupResult lookupChar(int index) {

@@ -37,7 +37,8 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/edit_price"
         android:layout_marginTop="16dp"
-        android:inputType="text"
+        android:inputType="textImeMultiLine|textMultiLine"
+        android:maxLines="3"
         android:hint="Custom formatter. Puts dots instead of spaces."/>
 
 </android.support.constraint.ConstraintLayout>
