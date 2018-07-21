@@ -249,7 +249,7 @@ public class FormattableText implements CharSequence {
             mIsRtl = TextDirectionHeuristics.FIRSTSTRONG_LTR.isRtl(mBigPicture, 0, mBigPicture.length());
         }
         else {
-            mIsRtl = mBigPicture.matches("[\\p{IsAlphabetic}&&\\W]");
+            mIsRtl = !mBigPicture.matches("\\p{ASCII}.*");
         }
     }
 
