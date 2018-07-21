@@ -16,7 +16,7 @@ public class PanInputFormatter extends InputFormatter {
         return mInstance;
     }
 
-    private static Formatter makePanFormatter() {
+    private static Formatter makePanFormatter(final char separator) {
         return new Formatter() {
 
             @Override
@@ -24,23 +24,27 @@ public class PanInputFormatter extends InputFormatter {
                 int len = text.length();
 
                 if (len > 12) {
-                    text.insert(12, " ");
+                    text.insert(12, "" + separator);
                 }
 
                 if (len > 8) {
-                    text.insert(8, " ");
+                    text.insert(8, " " + separator);
                 }
 
                 if (len > 4) {
-                    text.insert(4, " ");
+                    text.insert(4, " " + separator);
                 }
             }
 
         };
     }
 
+    public PanInputFormatter(char separator) {
+        super(makePanFormatter(separator));
+    }
+
     public PanInputFormatter() {
-        super(makePanFormatter());
+        this(' ');
     }
 
 }
