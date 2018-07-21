@@ -28,11 +28,11 @@ public class PanInputFormatter extends InputFormatter {
                 }
 
                 if (len > 8) {
-                    text.insert(8, " " + separator);
+                    text.insert(8, "" + separator);
                 }
 
                 if (len > 4) {
-                    text.insert(4, " " + separator);
+                    text.insert(4, "" + separator);
                 }
             }
 
